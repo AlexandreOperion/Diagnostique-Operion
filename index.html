@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Diagnostic OPERION</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,sans-serif;background:#f5f5f3;color:#1a1a1a;min-height:100vh}
+.app{max-width:860px;margin:0 auto;padding:2rem 1.5rem}
+.header{margin-bottom:1.5rem;display:flex;align-items:center;gap:16px}
+.logo{background:#0D0D0D;color:#C9A84C;font-size:15px;font-weight:900;padding:10px 16px;border-radius:8px;letter-spacing:1.5px;line-height:1.2;border:2px solid #C9A84C}
+.logo-sub{font-size:8px;color:#888;font-weight:400;letter-spacing:0.5px;display:block;margin-top:1px}
+.header-text h1{font-size:20px;font-weight:600;color:#1a1a1a}
+.header-text p{font-size:13px;color:#6b6b6b;margin-top:2px}
+.progress-wrap{background:#e0e0e0;border-radius:4px;height:6px;margin-bottom:1.5rem}
+.progress-fill{height:6px;border-radius:4px;background:#C9A84C;transition:width 0.3s}
+.progress-label{font-size:11px;color:#888;text-align:right;margin-top:4px}
+.domain-nav{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:1.5rem}
+.domain-btn{font-size:11px;padding:5px 12px;border-radius:20px;border:1px solid #ccc;background:#fff;color:#666;cursor:pointer;transition:all 0.15s}
+.domain-btn:hover{border-color:#C9A84C;color:#C9A84C}
+.domain-btn.active{background:#C9A84C;border-color:#C9A84C;color:#fff;font-weight:600}
+.domain-btn.done{border-color:#3B6D11;color:#3B6D11;background:#EAF3DE}
+.section-title{font-size:17px;font-weight:600;color:#1a1a1a;margin-bottom:4px}
+.section-sub{font-size:12px;color:#888;margin-bottom:1rem}
+.answered-count{font-size:11px;color:#888;text-align:right;margin-bottom:0.75rem}
+.question-card{background:#fff;border:1px solid #e0e0e0;border-radius:10px;padding:1rem 1.25rem;margin-bottom:0.75rem}
+.question-text{font-size:13px;color:#1a1a1a;margin-bottom:0.75rem;line-height:1.55}
+.q-num{font-weight:600;color:#aaa;font-size:11px;margin-right:4px}
+.scale{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.scale-label{font-size:11px;color:#aaa}
+.scale-btn{width:38px;height:38px;border-radius:50%;border:1px solid #ddd;background:#f9f9f9;color:#555;cursor:pointer;font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:center;transition:all 0.15s;flex-shrink:0}
+.scale-btn:hover{border-color:#C9A84C;color:#C9A84C;background:#FBF6E9}
+.scale-btn.sel-1{background:#FCEBEB;border-color:#E24B4A;color:#A32D2D}
+.scale-btn.sel-2{background:#FAEEDA;border-color:#EF9F27;color:#854F0B}
+.scale-btn.sel-3{background:#FBF6E9;border-color:#378ADD;color:#8B6A1F}
+.scale-btn.sel-4{background:#EAF3DE;border-color:#639922;color:#3B6D11}
+.scale-btn.sel-5{background:#d4edda;border-color:#27500A;color:#173404}
+.scale-sep{width:1px;height:28px;background:#e0e0e0;margin:0 2px;flex-shrink:0}
+.btn-nsp{height:32px;padding:0 10px;border-radius:6px;border:1px dashed #bbb;background:#fafafa;color:#999;cursor:pointer;font-size:11px;font-weight:500;display:flex;align-items:center;justify-content:center;transition:all 0.15s;flex-shrink:0;white-space:nowrap}
+.btn-nsp:hover{border-color:#888;color:#555;background:#f0f0f0}
+.btn-nsp.sel-nsp{background:#f5f0ff;border-color:#9b6fd4;color:#6a3fb5;border-style:solid}
+.scale-legend{display:flex;justify-content:space-between;font-size:10px;color:#aaa;margin-top:5px;padding:0 2px}
+.nav-btns{display:flex;gap:10px;margin-top:1.5rem;justify-content:space-between;align-items:center}
+.btn{padding:9px 22px;border-radius:8px;border:1px solid #ccc;background:#fff;color:#333;cursor:pointer;font-size:13px;font-weight:500;transition:all 0.15s}
+.btn:hover{background:#f0f0f0}
+.btn-primary{background:#C9A84C;border-color:#C9A84C;color:#fff}
+.btn-primary:hover{background:#8B6A1F}
+.btn-danger{background:#fff;border-color:#E24B4A;color:#E24B4A}
+.btn-danger:hover{background:#FCEBEB}
+.results{padding:0.5rem 0}
+.global-score{text-align:center;padding:2rem;background:#fff;border-radius:12px;border:1px solid #e0e0e0;margin-bottom:1.5rem}
+.global-num{font-size:56px;font-weight:700;color:#C9A84C}
+.global-label{font-size:14px;color:#888;margin-top:4px}
+.level-badge{display:inline-block;padding:5px 18px;border-radius:20px;font-size:12px;font-weight:600;margin-top:10px}
+.radar-wrap{background:#fff;border:1px solid #e0e0e0;border-radius:12px;padding:1.5rem;margin-bottom:1.5rem;position:relative;height:420px}
+.scores-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:1.5rem}
+.score-card{background:#fff;border-radius:10px;padding:1rem 1.25rem;border:1px solid #e0e0e0;border-left-width:4px}
+.score-card-label{font-size:12px;color:#666;margin-bottom:6px;line-height:1.4}
+.score-card-val{font-size:22px;font-weight:700;color:#1a1a1a}
+.score-card-level{font-size:11px;font-weight:600;margin-left:6px}
+.print-btn{background:#fff;border:1px solid #ccc;color:#333;padding:9px 22px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:500}
+.print-btn:hover{background:#f0f0f0}
+.client-section{background:#fff;border:1px solid #e0e0e0;border-radius:10px;padding:1rem 1.25rem;margin-bottom:1.5rem}
+.client-section label{font-size:12px;color:#666;display:block;margin-bottom:4px;font-weight:600}
+.client-section input,.client-section select{width:100%;border:1px solid #ddd;border-radius:6px;padding:7px 10px;font-size:13px;outline:none;margin-bottom:10px;background:#fff}
+.client-section input:focus,.client-section select:focus{border-color:#C9A84C}
+.client-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}
+.date-info{font-size:11px;color:#aaa;margin-top:-6px;margin-bottom:10px}
+.mail-status{margin-top:12px;padding:10px 14px;border-radius:8px;font-size:12px;font-weight:600;display:none}
+.mail-status.sending{background:#FBF6E9;color:#C9A84C;border:1px solid #e8d49a;display:block}
+.mail-status.ok{background:#EAF3DE;color:#3B6D11;border:1px solid #b3d9a0;display:block}
+.mail-status.err{background:#FCEBEB;color:#A32D2D;border:1px solid #f0b3b3;display:block}
+.nsp-note{font-size:10px;color:#aaa;margin-top:6px;font-style:italic}
+.nsp-block{background:#fff;border:1px solid #e0e0e0;border-radius:10px;padding:1.25rem;margin-bottom:1.5rem}
+.nsp-domain-row{display:flex;align-items:flex-start;gap:10px;padding:0.6rem 0;border-bottom:1px solid #f5f0ff}
+.nsp-domain-row:last-child{border-bottom:none}
+.nsp-badge{background:#f5f0ff;border:1px solid #9b6fd4;color:#6a3fb5;border-radius:12px;font-size:11px;font-weight:700;padding:2px 9px;white-space:nowrap;flex-shrink:0;margin-top:1px}
+.nsp-q-list{font-size:11px;color:#666;line-height:1.6;margin-top:3px}
+.nsp-q-item{display:flex;gap:6px;margin-bottom:2px}
+.nsp-q-num{color:#9b6fd4;font-weight:600;flex-shrink:0}
+@media(max-width:600px){
+  .scores-grid{grid-template-columns:1fr}
+  .domain-btn{font-size:10px;padding:4px 9px}
+  .client-grid{grid-template-columns:1fr}
+}
+@media print{
+  body{background:#fff}
+  .no-print{display:none!important}
+  .app{padding:0}
+  .question-card{break-inside:avoid}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+<div class="header">
+  <div class="logo">OPERION<span class="logo-sub">Simplifier pour Performer</span></div>
+  <div class="header-text">
+    <h1>Outil de diagnostic</h1>
+    <p id="subtitle">Évaluation de la maturité opérationnelle — 8 domaines, 320 critères</p>
+  </div>
+</div>
+
+<div class="progress-wrap">
+  <div class="progress-fill" id="prog" style="width:0%"></div>
+</div>
+<div class="progress-label" id="progLabel">0 / 320 questions répondues</div>
+
+<div class="domain-nav no-print" id="domainNav"></div>
+
+<div id="mainContent"></div>
+
+</div>
+
+<script>
+const DEST_EMAIL = 'operion.akr@gmail.com';
+
+const DOMAINS = [
+  {
+    id:0, short:"Qualité produit",
+    name:"Qualité produit et conformité",
+    color:"#E24B4A",
+    questions:[
+      "Les critères de qualité des produits finis sont définis et documentés.",
+      "Les opérateurs connaissent et appliquent les standards de qualité attendus.",
+      "Des contrôles qualité sont réalisés en cours de production (autocontrôle).",
+      "Un contrôle qualité final est systématiquement effectué avant expédition.",
+      "Les non-conformités détectées sont enregistrées et tracées.",
+      "Une analyse des causes est réalisée pour chaque non-conformité récurrente.",
+      "Des actions correctives sont mises en place et suivies jusqu'à clôture.",
+      "Les rebuts et retouches sont mesurés et leur coût est connu.",
+      "Le taux de non-conformité est suivi et communiqué régulièrement.",
+      "Les réclamations clients sont enregistrées et analysées systématiquement.",
+      "Un plan d'action qualité est en place et actualisé régulièrement.",
+      "Les spécifications techniques des produits sont accessibles aux opérateurs.",
+      "Les matières premières font l'objet d'un contrôle à réception.",
+      "Les instruments de mesure sont étalonnés et vérifiés périodiquement.",
+      "Les résultats des contrôles qualité sont enregistrés et exploitables.",
+      "Les gammes de fabrication incluent des points de contrôle qualité définis.",
+      "La traçabilité des lots de production est assurée de bout en bout.",
+      "Les causes de défauts récurrents (soudure, poids, etc.) sont identifiées.",
+      "Des limites de tolérance sont définies pour les paramètres critiques.",
+      "Un système d'alerte existe en cas de dérive qualité détectée.",
+      "Les résultats qualité sont partagés avec les équipes de production.",
+      "Le personnel est formé aux techniques de contrôle qualité.",
+      "Des audits qualité internes sont réalisés régulièrement.",
+      "La gestion des produits non conformes (quarantaine, traitement) est formalisée.",
+      "Les fournisseurs font l'objet d'une évaluation qualité périodique.",
+      "Un retour d'expérience est organisé après chaque incident qualité majeur.",
+      "Les indicateurs qualité sont intégrés dans le tableau de bord de direction.",
+      "Les exigences qualité clients sont connues et intégrées dans la production.",
+      "Les documents qualité sont à jour et accessibles aux équipes.",
+      "Le coût de non-qualité est estimé et suivi par la direction.",
+      "Un processus de validation existe avant le lancement d'une nouvelle production.",
+      "Les conditions de stockage des produits sont définies et respectées.",
+      "Les emballages font l'objet d'un contrôle qualité spécifique.",
+      "Les paramètres critiques de production sont identifiés et surveillés.",
+      "Un plan de surveillance est en place pour les paramètres critiques.",
+      "Les résultats qualité sont utilisés pour améliorer les processus.",
+      "La direction s'implique activement dans la démarche qualité.",
+      "Un objectif qualité chiffré est fixé et connu des équipes.",
+      "Les bonnes pratiques qualité sont valorisées et encouragées.",
+      "La certification ou une démarche qualité formelle est en cours ou en place."
+    ]
+  },
+  {
+    id:1, short:"Processus prod.",
+    name:"Performance des processus de production",
+    color:"#EF9F27",
+    questions:[
+      "Les flux de production sont cartographiés et connus de tous.",
+      "Les goulots d'étranglement dans le flux de production sont identifiés.",
+      "Les temps de cycle par opération sont mesurés et connus.",
+      "Le taux de rendement synthétique (TRS/OEE) est calculé et suivi.",
+      "Les arrêts de production sont enregistrés et catégorisés.",
+      "Les causes d'arrêts sont analysées et des actions correctives sont engagées.",
+      "La cadence de production réelle est comparée à la cadence théorique.",
+      "Les pertes de production sont quantifiées en volume et en valeur.",
+      "Les changements de format ou de référence sont chronométrés et optimisés.",
+      "Un programme de production est établi et respecté au quotidien.",
+      "Les encours entre postes sont maîtrisés et limités.",
+      "Les flux de matières sont organisés pour éviter les ruptures d'approvisionnement.",
+      "Les déchets de production sont mesurés et des actions de réduction sont engagées.",
+      "Les consommations d'énergie par unité produite sont suivies.",
+      "Les équipements critiques sont identifiés et leur fiabilité est suivie.",
+      "Les temps de démarrage et d'arrêt de production sont optimisés.",
+      "La traçabilité des flux de production est assurée en temps réel.",
+      "Les retraitements et retouches sont intégrés dans le calcul des pertes.",
+      "Les performances de production sont comparées à des références du secteur.",
+      "Les opérateurs connaissent les objectifs de production quotidiens.",
+      "Les plannings de production sont respectés à plus de 90%.",
+      "Les aléas (pannes, ruptures) sont anticipés et des plans de continuité existent.",
+      "Les ressources humaines sont allouées en fonction de la charge de production.",
+      "Un suivi de production en temps réel est disponible pour l'encadrement.",
+      "Les modes opératoires de production sont formalisés et à jour.",
+      "Les réglages machines sont documentés et reproductibles.",
+      "La polyvalence des opérateurs permet de pallier les absences.",
+      "Les sous-traitants éventuels sont intégrés dans le suivi de performance.",
+      "Des projets d'amélioration de la productivité sont en cours.",
+      "Les résultats de production sont analysés en réunion quotidienne ou hebdomadaire.",
+      "Les pertes liées aux changements de série sont mesurées.",
+      "L'ordonnancement est réalisé en tenant compte des contraintes machines.",
+      "Les objectifs de production sont atteignables et réalistes.",
+      "Les opérateurs contribuent activement à l'amélioration des processus.",
+      "Les investissements en équipement sont évalués sur la base du retour sur investissement.",
+      "Les risques de rupture de production sont identifiés et gérés.",
+      "Les temps de nettoyage et de remise en état sont intégrés dans la planification.",
+      "Les incidents de production sont documentés avec leur impact économique.",
+      "Les nouvelles technologies sont évaluées pour améliorer la performance.",
+      "Un programme d'amélioration continue est formalisé et actif."
+    ]
+  },
+  {
+    id:2, short:"Pilotage perf.",
+    name:"Pilotage de la performance",
+    color:"#378ADD",
+    questions:[
+      "Un tableau de bord de performance est en place et utilisé quotidiennement.",
+      "Les indicateurs clés (KPI) sont définis, mesurés et affichés.",
+      "Les objectifs de performance sont fixés annuellement et déclinés en équipes.",
+      "Les résultats réels sont comparés aux objectifs chaque semaine.",
+      "Les écarts significatifs font l'objet d'une analyse et d'une action corrective.",
+      "Les indicateurs couvrent qualité, coût, délai et sécurité.",
+      "Le tableau de bord est accessible à l'ensemble de l'encadrement.",
+      "Les données de performance sont fiables et mises à jour régulièrement.",
+      "Les tendances (amélioration ou dégradation) sont identifiées et commentées.",
+      "La direction revoit les indicateurs de performance en réunion mensuelle.",
+      "Les objectifs de performance sont communiqués aux équipes de terrain.",
+      "Les contre-performances sont traitées sans délai.",
+      "Un budget est associé aux actions d'amélioration de la performance.",
+      "La performance des équipes est évaluée et reconnue.",
+      "Des indicateurs d'anticipation (lead indicators) sont utilisés.",
+      "Les coûts opérationnels sont suivis et analysés mensuellement.",
+      "Le coût de revient par produit est connu et suivi.",
+      "La marge opérationnelle est suivie par ligne de produit ou activité.",
+      "Les gains issus des actions d'amélioration sont mesurés et valorisés.",
+      "Les indicateurs de performance sont visuels et lisibles depuis le terrain.",
+      "Le pilotage de la performance est intégré dans la culture managériale.",
+      "Les réunions de performance sont structurées et efficaces.",
+      "Les décisions opérationnelles sont basées sur des données factuelles.",
+      "Le benchmarking externe est utilisé pour fixer des objectifs ambitieux.",
+      "Les indicateurs de satisfaction client sont intégrés au pilotage.",
+      "La performance des fournisseurs est suivie et intégrée au tableau de bord.",
+      "Les indicateurs RH (absentéisme, turnover) sont suivis et analysés.",
+      "Un système d'alerte existe en cas de dépassement des seuils critiques.",
+      "La performance énergétique est mesurée et intégrée au pilotage.",
+      "Les projets d'investissement sont suivis avec des indicateurs de réalisation.",
+      "Le retour sur investissement des actions engagées est mesuré.",
+      "Les indicateurs sont révisés et adaptés régulièrement à l'évolution des enjeux.",
+      "La performance est pilotée à tous les niveaux (direction, encadrement, terrain).",
+      "Les résultats sont partagés de façon transparente avec les équipes.",
+      "Un plan d'amélioration de la performance est formalisé et suivi.",
+      "Les axes de progrès prioritaires sont identifiés et arbitrés par la direction.",
+      "Les outils de pilotage sont accessibles et faciles à utiliser.",
+      "Les données de performance sont collectées sans délai excessif.",
+      "Les équipes comprennent le lien entre leur travail et les résultats globaux.",
+      "La direction utilise les données de performance pour prendre des décisions stratégiques."
+    ]
+  },
+  {
+    id:3, short:"Organisation",
+    name:"Organisation et management opérationnel",
+    color:"#1D9E75",
+    questions:[
+      "L'organigramme de l'entreprise est formalisé et connu de tous.",
+      "Les rôles et responsabilités de chaque poste sont clairement définis.",
+      "Les délégations de responsabilité sont formalisées et respectées.",
+      "Les managers de proximité disposent des moyens et de l'autonomie nécessaires.",
+      "Les réunions opérationnelles sont structurées, régulières et efficaces.",
+      "Un processus de décision clair est en place pour les problèmes opérationnels.",
+      "Les priorités opérationnelles sont arbitrées et communiquées clairement.",
+      "La charge de travail est répartie équitablement entre les équipes.",
+      "Les conflits ou tensions entre services sont traités rapidement.",
+      "La direction de proximité est présente sur le terrain régulièrement.",
+      "Les réunions ne génèrent pas de surcharge inutile pour les équipes terrain.",
+      "Les procédures administratives n'alourdissent pas le travail opérationnel.",
+      "L'organisation s'adapte rapidement en cas d'aléa ou d'urgence.",
+      "Les relations entre les services (maintenance, qualité, production) sont fluides.",
+      "Un planning hebdomadaire est établi et partagé avec les équipes.",
+      "Les absences sont anticipées et remplacées efficacement.",
+      "Les réunions de direction incluent systématiquement un volet opérationnel.",
+      "La direction générale est accessible et visible sur le terrain.",
+      "Les remontées terrain sont prises en compte dans les décisions.",
+      "L'organisation permet une réactivité rapide face aux incidents.",
+      "Les interfaces entre équipes sont clarifiées et documentées.",
+      "Les équipes travaillent en coopération plutôt qu'en silos.",
+      "Un plan de continuité d'activité est formalisé pour les situations critiques.",
+      "Les recrutements sont anticipés par rapport aux besoins de production.",
+      "La structure organisationnelle est adaptée à la taille et aux enjeux de l'entreprise.",
+      "Les responsabilités en matière de sécurité sont clairement attribuées.",
+      "Un référent par domaine clé (qualité, maintenance, prod) est identifié.",
+      "Les décisions opérationnelles importantes sont tracées et communiquées.",
+      "Les équipes de nuit ou de week-end bénéficient du même encadrement que les équipes de jour.",
+      "Le turnover managérial est limité et ne déstabilise pas l'organisation.",
+      "Les objectifs collectifs et individuels sont alignés sur la stratégie de l'entreprise.",
+      "La polyvalence organisationnelle est développée pour limiter les dépendances.",
+      "Les projets transverses sont pilotés avec des responsables désignés.",
+      "L'organisation permet une montée en charge rapide en cas de pic d'activité.",
+      "Les process RH (recrutement, intégration, évaluation) sont formalisés.",
+      "Les managers sont formés aux pratiques managériales.",
+      "L'organisation évolue régulièrement pour s'adapter aux enjeux.",
+      "Les décisions sont prises au bon niveau hiérarchique.",
+      "La confiance entre la direction et les équipes est perceptible.",
+      "L'organisation favorise l'initiative et l'amélioration continue."
+    ]
+  },
+  {
+    id:4, short:"Compétences",
+    name:"Compétences et pratiques terrain",
+    color:"#D4537E",
+    questions:[
+      "Une cartographie des compétences critiques est établie et à jour.",
+      "Les besoins en formation sont identifiés annuellement pour chaque poste.",
+      "Un plan de formation est formalisé et mis en œuvre.",
+      "Les formations réalisées font l'objet d'une évaluation de leur efficacité.",
+      "La polyvalence des opérateurs est développée et cartographiée.",
+      "Les opérateurs maîtrisent les modes opératoires de leur poste.",
+      "Les réglages et mises en route machines sont maîtrisés de façon autonome.",
+      "Les opérateurs savent détecter les anomalies sur leur poste.",
+      "Les savoir-faire critiques ne reposent pas sur une seule personne.",
+      "Les nouveaux arrivants bénéficient d'un parcours d'intégration structuré.",
+      "Le tutorat ou compagnonnage est pratiqué pour la transmission des savoirs.",
+      "Les formations internes sont dispensées par des formateurs identifiés.",
+      "Les habilitations réglementaires sont à jour pour tous les postes concernés.",
+      "Les opérateurs sont formés aux règles de sécurité de leur poste.",
+      "Les bonnes pratiques terrain sont formalisées et partagées.",
+      "Les compétences des opérateurs sont évaluées périodiquement.",
+      "Les opérateurs comprennent l'impact de leur poste sur la qualité finale.",
+      "Les équipes terrain sont impliquées dans les démarches d'amélioration.",
+      "Les suggestions d'amélioration des opérateurs sont écoutées et valorisées.",
+      "Les managers de proximité accompagnent le développement des compétences.",
+      "Les formations sont adaptées aux réalités du terrain.",
+      "Les erreurs terrain sont utilisées comme des opportunités d'apprentissage.",
+      "Les opérateurs savent utiliser les outils de mesure et de contrôle.",
+      "Les compétences en résolution de problèmes sont développées.",
+      "La formation à la maintenance de premier niveau est assurée.",
+      "Les opérateurs connaissent les indicateurs de performance de leur poste.",
+      "La maîtrise des outils informatiques nécessaires est assurée.",
+      "Les formations sont documentées (attestations, fiches de suivi).",
+      "Le niveau de compétence est pris en compte dans l'organisation du travail.",
+      "La direction investit suffisamment dans la formation.",
+      "Les pertes liées au manque de compétences sont identifiées.",
+      "Un référentiel de compétences par poste est formalisé.",
+      "Les opérateurs sont autonomes dans la gestion des aléas courants.",
+      "La culture d'apprentissage continu est valorisée dans l'entreprise.",
+      "Les pratiques terrain respectent les procédures définies.",
+      "Les écarts entre procédures et pratiques réelles sont identifiés et corrigés.",
+      "Les opérateurs reçoivent un retour régulier sur leur performance.",
+      "La fierté du travail bien fait est valorisée par la direction.",
+      "Les compétences terrain sont reconnues et valorisées dans l'entreprise.",
+      "Des passerelles de progression (évolution de poste) sont proposées aux opérateurs."
+    ]
+  },
+  {
+    id:5, short:"Maintenance",
+    name:"Maintenance et fiabilité des équipements",
+    color:"#7F77DD",
+    questions:[
+      "Un inventaire complet des équipements critiques est disponible et à jour.",
+      "Un plan de maintenance préventive est formalisé et appliqué.",
+      "Les interventions de maintenance préventive sont planifiées et respectées.",
+      "Le taux de réalisation du plan de maintenance préventive est suivi.",
+      "Les pannes sont enregistrées avec leur durée, cause et coût associé.",
+      "Le MTBF (temps moyen entre pannes) est calculé pour les équipements critiques.",
+      "Le MTTR (temps moyen de réparation) est suivi et optimisé.",
+      "Un stock de pièces de rechange critiques est maintenu à niveau.",
+      "Les délais d'approvisionnement en pièces de rechange sont connus.",
+      "Les techniciens de maintenance disposent des compétences nécessaires.",
+      "Les interventions de maintenance sont documentées dans un historique.",
+      "Un système de gestion des interventions (GMAO ou équivalent) est utilisé.",
+      "La maintenance de premier niveau est assurée par les opérateurs.",
+      "Les opérateurs sont formés à détecter les signaux faibles de défaillance.",
+      "Les équipements critiques font l'objet d'une attention particulière.",
+      "La maintenance prédictive est envisagée ou en cours de déploiement.",
+      "Les sous-traitants maintenance sont qualifiés et leurs interventions suivies.",
+      "Le budget maintenance est défini et respecté.",
+      "La part de maintenance curative vs préventive est mesurée.",
+      "Un objectif de réduction de la maintenance curative est fixé.",
+      "Les arrêts machines sont intégrés dans le calcul du TRS.",
+      "Les nettoyages et inspections régulières sont formalisés (rondes, check-lists).",
+      "Les lubrifications et réglages périodiques sont planifiés et tracés.",
+      "Les équipements de sécurité (protections, capteurs) sont vérifiés périodiquement.",
+      "Les travaux de maintenance n'impactent pas la production de façon non planifiée.",
+      "Les fenêtres de maintenance sont intégrées dans la planification de production.",
+      "Les causes racines des pannes récurrentes sont analysées et traitées.",
+      "Les équipements font l'objet d'un suivi de leur durée de vie résiduelle.",
+      "Les investissements de remplacement sont planifiés avant défaillance critique.",
+      "La communication entre production et maintenance est efficace.",
+      "Les demandes d'intervention sont traitées selon un niveau de priorité défini.",
+      "Un système de détection précoce des dérives de fonctionnement est en place.",
+      "Les réglages machines après maintenance sont validés avant reprise de production.",
+      "La fiabilité des équipements est un critère dans les décisions d'investissement.",
+      "Les fiches techniques et schémas des équipements sont disponibles et à jour.",
+      "Les opérateurs participent activement à la maintenance de leur équipement.",
+      "Les améliorations techniques (modifications, modernisations) sont tracées.",
+      "La sécurité est systématiquement intégrée dans les interventions de maintenance.",
+      "Le taux de disponibilité des équipements critiques est mesuré.",
+      "La direction considère la maintenance comme un investissement, pas une dépense."
+    ]
+  },
+  {
+    id:6, short:"Standards",
+    name:"Standards et structuration des pratiques",
+    color:"#BA7517",
+    questions:[
+      "Les modes opératoires sont rédigés pour tous les postes critiques.",
+      "Les modes opératoires sont accessibles directement aux postes de travail.",
+      "Les standards sont rédigés dans un langage clair et compréhensible.",
+      "Les standards incluent des illustrations ou photos pour faciliter la compréhension.",
+      "Les standards sont mis à jour lorsque les pratiques évoluent.",
+      "Le respect des standards est vérifié régulièrement par l'encadrement.",
+      "Les écarts aux standards sont signalés et traités sans délai.",
+      "Les standards de nettoyage et rangement (5S) sont définis et appliqués.",
+      "Les zones de travail sont organisées pour faciliter les opérations (ergonomie).",
+      "Les emplacements des outils et matériaux sont définis et respectés.",
+      "Un audit 5S est réalisé périodiquement et ses résultats sont affichés.",
+      "Les standards de démarrage de poste sont formalisés et respectés.",
+      "Les check-lists de fin de poste sont utilisées systématiquement.",
+      "Les procédures d'arrêt d'urgence sont connues de tous les opérateurs.",
+      "Les consignes de sécurité au poste sont affichées et respectées.",
+      "Les procédures de changement de série sont standardisées et chronométrées.",
+      "Les points de contrôle qualité intégrés aux gammes sont respectés.",
+      "Les paramètres critiques de réglage sont documentés et appliqués.",
+      "Les procédures de gestion des non-conformités sont connues et suivies.",
+      "Les standards de conditionnement et d'emballage sont respectés.",
+      "Les procédures de réception des matières premières sont appliquées.",
+      "Les standards d'étiquetage et de traçabilité sont respectés.",
+      "La gestion documentaire est organisée et les documents sont contrôlés.",
+      "Les enregistrements de production sont renseignés correctement.",
+      "Les procédures de communication en cas d'incident sont connues.",
+      "Les standards sont élaborés avec la participation des opérateurs.",
+      "La direction s'assure que les standards sont réellement appliqués.",
+      "Un programme de révision périodique des standards est en place.",
+      "Les standards constituent une base pour la formation des nouveaux arrivants.",
+      "Les non-respects de standards sont analysés pour identifier les causes.",
+      "Les standards reflètent les meilleures pratiques actuelles.",
+      "Les procédures de qualification des nouveaux équipements sont formalisées.",
+      "Les standards intègrent les exigences réglementaires applicables.",
+      "La standardisation réduit la variabilité des résultats.",
+      "Les pratiques informelles efficaces sont formalisées et standardisées.",
+      "Les standards sont un outil de progrès, pas seulement de conformité.",
+      "Le management valorise activement le respect des standards.",
+      "Les dérogations aux standards font l'objet d'une autorisation formelle.",
+      "La gestion des risques est intégrée dans la définition des standards.",
+      "Les standards facilitent la polyvalence et le remplacement des opérateurs."
+    ]
+  },
+  {
+    id:7, short:"Communication",
+    name:"Communication et circulation de l'information",
+    color:"#888780",
+    questions:[
+      "Les informations opérationnelles clés sont communiquées aux équipes terrain.",
+      "Un affichage dynamique des indicateurs est présent dans les ateliers.",
+      "Les réunions d'équipe quotidiennes (stand-up / TOP 5) sont pratiquées.",
+      "Les comptes rendus de réunion sont rédigés et diffusés dans les 24h.",
+      "Les décisions prises en réunion sont communiquées aux personnes concernées.",
+      "Les équipes de nuit reçoivent les mêmes informations que les équipes de jour.",
+      "La passation de consignes entre équipes (changement de poste) est structurée.",
+      "Les incidents de production sont communiqués rapidement à l'encadrement.",
+      "Les informations stratégiques de l'entreprise sont partagées avec les équipes.",
+      "Les équipes terrain comprennent les enjeux et objectifs de l'entreprise.",
+      "Un canal de remontée d'information terrain vers la direction est en place.",
+      "Les suggestions des opérateurs sont traitées et font l'objet d'un retour.",
+      "La communication entre production, maintenance et qualité est fluide.",
+      "Les informations clients (exigences, réclamations) sont partagées en interne.",
+      "Les changements organisationnels sont communiqués avant leur mise en œuvre.",
+      "La direction est accessible et pratique le management terrain (MBWA).",
+      "Les bonnes pratiques et réussites sont partagées entre équipes.",
+      "Un support visuel (tableau de bord, affichage) est présent dans chaque zone.",
+      "Les équipes reçoivent un retour sur les résultats de leurs actions.",
+      "La communication est adaptée au niveau et à la langue des opérateurs.",
+      "Les procédures de gestion de crise sont communiquées et connues.",
+      "La communication favorise un climat de confiance et de transparence.",
+      "Les tensions ou dysfonctionnements entre services sont traités ouvertement.",
+      "Les outils de communication (messagerie, affichage, radio) sont adaptés.",
+      "Les informations de planification sont partagées suffisamment en avance.",
+      "La communication ascendante (terrain vers direction) est encouragée.",
+      "Les opérateurs se sentent informés et pas isolés de la vie de l'entreprise.",
+      "Les informations importantes ne se perdent pas dans l'organisation.",
+      "Un processus d'escalade clair existe pour les problèmes bloquants.",
+      "Les informations de sécurité sont communiquées régulièrement.",
+      "Les résultats des audits sont partagés avec les équipes concernées.",
+      "La communication contribue à l'engagement et à la motivation des équipes.",
+      "Les objectifs sont déclinés et expliqués à chaque niveau de l'organisation.",
+      "Les retours d'expérience après incidents sont partagés collectivement.",
+      "La direction communique sa vision et ses ambitions régulièrement.",
+      "Les informations relatives aux clients et aux marchés sont diffusées en interne.",
+      "Les équipes savent à qui s'adresser en cas de problème.",
+      "Les canaux de communication informels sont reconnus et valorisés.",
+      "La communication interne favorise la cohésion et l'esprit d'équipe.",
+      "Un plan de communication interne est formalisé et mis en œuvre."
+    ]
+  }
+];
+
+let currentDomain = 0;
+let answers = {};
+let clientName = '';
+let respondentName = '';
+let respondentRole = '';
+let diagDate = new Date().toLocaleDateString('fr-FR');
+DOMAINS.forEach(d => { answers[d.id] = {}; });
+
+// NSP = -1 (exclu du calcul), 0 = non répondu, 1-5 = note
+function getScore(domainId) {
+  const qs = DOMAINS[domainId].questions;
+  const ans = answers[domainId];
+  const filled = Object.values(ans).filter(v => v > 0); // exclut 0 (vide) et -1 (NSP)
+  if(filled.length === 0) return 0;
+  return Math.round((filled.reduce((a,b) => a+b, 0) / (filled.length * 5)) * 100);
+}
+
+function isDone(domainId) {
+  const qs = DOMAINS[domainId].questions;
+  const ans = answers[domainId];
+  return Object.keys(ans).length === qs.length && Object.values(ans).every(v => v !== 0);
+}
+
+function answeredCount(domainId) {
+  return Object.values(answers[domainId]).filter(v => v !== 0).length;
+}
+
+function totalAnswered() {
+  let t = 0;
+  DOMAINS.forEach(d => { t += answeredCount(d.id); });
+  return t;
+}
+
+function renderNav() {
+  const nav = document.getElementById('domainNav');
+  nav.innerHTML = DOMAINS.map(d => `
+    <button class="domain-btn ${d.id===currentDomain?'active':''} ${isDone(d.id)?'done':''}" onclick="goTo(${d.id})">${d.short}</button>
+  `).join('');
+}
+
+function renderProgress() {
+  const total = DOMAINS.reduce((a,d) => a+d.questions.length, 0);
+  const done = totalAnswered();
+  const pct = Math.round(done/total*100);
+  document.getElementById('prog').style.width = pct+'%';
+  document.getElementById('progLabel').textContent = done+' / '+total+' questions répondues ('+pct+'%)';
+}
+
+function renderDomain() {
+  const d = DOMAINS[currentDomain];
+  const ans = answers[d.id];
+  const total = d.questions.length;
+  const done = answeredCount(d.id);
+
+  document.getElementById('mainContent').innerHTML = `
+    ${currentDomain === 0 ? `
+    <div class="client-section no-print">
+      <div style="font-size:13px;font-weight:600;color:#C9A84C;margin-bottom:12px">📋 Informations du répondant</div>
+      <div class="client-grid">
+        <div>
+          <label>Nom de l'entreprise cliente</label>
+          <input type="text" placeholder="Ex : Scierie des Gardes" value="${clientName}" oninput="clientName=this.value">
+        </div>
+        <div>
+          <label>Date du diagnostic</label>
+          <input type="text" placeholder="Ex : 12/04/2026" value="${diagDate}" oninput="diagDate=this.value">
+        </div>
+        <div>
+          <label>Nom du répondant</label>
+          <input type="text" placeholder="Ex : Jérémy Briffaud" value="${respondentName}" oninput="respondentName=this.value">
+        </div>
+        <div>
+          <label>Fonction</label>
+          <input type="text" placeholder="Ex : Directeur, Resp. Production…" value="${respondentRole}" oninput="respondentRole=this.value">
+        </div>
+      </div>
+    </div>` : ''}
+    <div class="section-title">${d.name}</div>
+    <div class="section-sub">Évaluez chaque critère de 1 (inexistant) à 5 (excellente maîtrise) — ou "NSP" si vous ne savez pas</div>
+    <div class="answered-count" id="ac">${done} / ${total} réponses</div>
+    ${d.questions.map((q,i) => `
+      <div class="question-card" id="qc-${i}">
+        <div class="question-text"><span class="q-num">${i+1}.</span> ${q}</div>
+        <div class="scale">
+          <span class="scale-label">1</span>
+          ${[1,2,3,4,5].map(v => `<button class="scale-btn ${ans[i]===v?'sel-'+v:''}" onclick="setAnswer(${i},${v})">${v}</button>`).join('')}
+          <span class="scale-label">5</span>
+          <div class="scale-sep"></div>
+          <button class="btn-nsp ${ans[i]===-1?'sel-nsp':''}" onclick="setAnswer(${i},-1)" title="Ne sait pas / Sans réponse">NSP</button>
+        </div>
+        <div class="scale-legend"><span>Inexistant / Non pratiqué</span><span>Excellente maîtrise</span></div>
+      </div>
+    `).join('')}
+    <div class="nav-btns no-print">
+      ${currentDomain > 0 ? `<button class="btn" onclick="goTo(${currentDomain-1})">← Précédent</button>` : '<span></span>'}
+      <button class="btn btn-danger" onclick="if(confirm('Réinitialiser toutes les réponses ?')){resetAll()}">Réinitialiser</button>
+      ${currentDomain < DOMAINS.length-1
+        ? `<button class="btn btn-primary" onclick="goTo(${currentDomain+1})">Suivant →</button>`
+        : `<button class="btn btn-primary" onclick="showResults()">Voir les résultats →</button>`
+      }
+    </div>
+  `;
+}
+
+function goTo(id) {
+  currentDomain = id;
+  renderNav();
+  renderProgress();
+  renderDomain();
+  window.scrollTo(0,0);
+}
+
+function setAnswer(qi, val) {
+  answers[currentDomain][qi] = val;
+  renderNav();
+  renderProgress();
+  const done = answeredCount(currentDomain);
+  const total = DOMAINS[currentDomain].questions.length;
+  document.getElementById('ac').textContent = done+' / '+total+' réponses';
+
+  // Mise à jour visuelle boutons 1-5
+  const scaleBtns = document.querySelectorAll(`#qc-${qi} .scale-btn`);
+  scaleBtns.forEach((b,i) => {
+    b.className = 'scale-btn' + (i+1===val ? ' sel-'+(i+1) : '');
+  });
+  // Mise à jour visuelle NSP
+  const nspBtn = document.querySelector(`#qc-${qi} .btn-nsp`);
+  if(nspBtn) nspBtn.className = 'btn-nsp' + (val===-1 ? ' sel-nsp' : '');
+}
+
+function resetAll() {
+  DOMAINS.forEach(d => { answers[d.id] = {}; });
+  goTo(0);
+}
+
+function getLevel(score) {
+  if(score < 20) return {label:'Niveau 1 — Informel', color:'#A32D2D', bg:'#FCEBEB'};
+  if(score < 40) return {label:'Niveau 2 — Émergent', color:'#854F0B', bg:'#FAEEDA'};
+  if(score < 60) return {label:'Niveau 3 — Structuré', color:'#8B6A1F', bg:'#FBF6E9'};
+  if(score < 80) return {label:'Niveau 4 — Maîtrisé', color:'#3B6D11', bg:'#EAF3DE'};
+  return {label:'Niveau 5 — Excellence', color:'#173404', bg:'#d4edda'};
+}
+
+function buildEmailBody(scores, global, lvl) {
+  const client = clientName || 'Entreprise non renseignée';
+  const name   = respondentName || 'Non renseigné';
+  const role   = respondentRole || 'Non renseigné';
+
+  let lines = [];
+  lines.push('=== DIAGNOSTIC OPERION ===');
+  lines.push('');
+  lines.push('Entreprise : ' + client);
+  lines.push('Date       : ' + diagDate);
+  lines.push('Répondant  : ' + name + ' — ' + role);
+  lines.push('');
+  lines.push('SCORE GLOBAL : ' + global + '%  →  ' + lvl.label);
+  lines.push('');
+  lines.push('─── SCORES PAR DOMAINE ───');
+  DOMAINS.forEach((d, i) => {
+    const lv = getLevel(scores[i]);
+    lines.push(d.name + ' : ' + scores[i] + '%  (' + lv.label.split('—')[1].trim() + ')');
+  });
+  lines.push('');
+  lines.push('─── RÉPONSES "NSP" (NE SAIT PAS) ───');
+  let totalNspEmail = 0;
+  DOMAINS.forEach(d => {
+    const nspQs = d.questions.map((q, qi) => ({ qi, q })).filter(({ qi }) => answers[d.id][qi] === -1);
+    if (nspQs.length > 0) {
+      lines.push('');
+      lines.push('▶ ' + d.name + ' (' + nspQs.length + ' NSP)');
+      nspQs.forEach(({ qi, q }) => lines.push('  ' + (qi+1) + '. ' + q));
+      totalNspEmail += nspQs.length;
+    }
+  });
+  if (totalNspEmail === 0) lines.push('Aucun NSP enregistré.');
+  lines.push('');
+  DOMAINS.forEach((d, i) => {
+    lines.push('');
+    lines.push('▶ ' + d.name.toUpperCase());
+    d.questions.forEach((q, qi) => {
+      const val = answers[d.id][qi];
+      let rep = '—';
+      if(val === -1) rep = 'NSP';
+      else if(val > 0) rep = val + '/5';
+      lines.push('  ' + (qi+1) + '. ' + q);
+      lines.push('     → ' + rep);
+    });
+  });
+  lines.push('');
+  lines.push('─────────────────────────────────────────');
+  lines.push('Diagnostic réalisé par OPERION — Alex Klein-Rhein | Conseil en excellence opérationnelle');
+  lines.push('OPERION — Alex Klein-Rhein');
+
+  return lines.join('\n');
+}
+
+async function sendEmail(scores, global, lvl) {
+  const statusEl = document.getElementById('mailStatus');
+  const btn = document.getElementById('sendBtn');
+
+  statusEl.className = 'mail-status sending';
+  statusEl.textContent = '⏳ Envoi en cours…';
+  if(btn) btn.disabled = true;
+
+  const client = clientName || 'Entreprise non renseignée';
+  const name   = respondentName || 'Non renseigné';
+  const role   = respondentRole || 'Non renseigné';
+  const body   = buildEmailBody(scores, global, lvl);
+  const subject = '[OPERION] Diagnostic ' + client + ' — ' + name + ' (' + role + ') — ' + diagDate;
+
+  const payload = {
+    _subject: subject,
+    _replyto: 'noreply@operion.fr',
+    entreprise: client,
+    repondant: name,
+    fonction: role,
+    date: diagDate,
+    diagnostic: body
+  };
+
+  try {
+    const res = await fetch('https://formspree.io/f/mpqbdjln', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+
+    if (res.ok && data.ok) {
+      statusEl.className = 'mail-status ok';
+      statusEl.textContent = '✅ Diagnostic envoyé avec succès à operion.akr@gmail.com';
+      if(btn) { btn.textContent = '✅ Envoyé'; }
+    } else {
+      const msg = (data.errors || []).map(e => e.message).join(', ') || ('Erreur ' + res.status);
+      throw new Error(msg);
+    }
+  } catch(err) {
+    statusEl.className = 'mail-status err';
+    statusEl.textContent = '⚠️ Échec : ' + err.message + (err.message.includes('Failed to fetch') ? ' — Le fichier doit être hébergé en ligne (pas ouvert en local).' : '');
+    if(btn) btn.disabled = false;
+  }
+}
+
+function buildNspBlock(scores) {
+  // Collecte tous les NSP par domaine
+  const nspDomains = DOMAINS.map((d, i) => {
+    const nspQs = d.questions
+      .map((q, qi) => ({ qi, q }))
+      .filter(({ qi }) => answers[d.id][qi] === -1);
+    return { d, i, nspQs };
+  }).filter(({ nspQs }) => nspQs.length > 0);
+
+  const totalNsp = nspDomains.reduce((a, { nspQs }) => a + nspQs.length, 0);
+  const totalQ   = DOMAINS.reduce((a, d) => a + d.questions.length, 0);
+
+  if (totalNsp === 0) return '';
+
+  const pct = Math.round(totalNsp / totalQ * 100);
+  const alertColor = pct >= 20 ? '#A32D2D' : pct >= 10 ? '#854F0B' : '#6a3fb5';
+  const alertBg    = pct >= 20 ? '#FCEBEB'  : pct >= 10 ? '#FAEEDA'  : '#f5f0ff';
+  const alertBorder= pct >= 20 ? '#E24B4A'  : pct >= 10 ? '#EF9F27'  : '#9b6fd4';
+
+  const domainsHtml = nspDomains.map(({ d, nspQs }) => `
+    <div class="nsp-domain-row">
+      <div style="flex:1">
+        <div style="font-size:12px;font-weight:600;color:#1a1a1a;margin-bottom:4px">
+          <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${d.color};margin-right:5px;vertical-align:middle"></span>
+          ${d.name}
+        </div>
+        <div class="nsp-q-list">
+          ${nspQs.map(({ qi, q }) => `
+            <div class="nsp-q-item">
+              <span class="nsp-q-num">${qi + 1}.</span>
+              <span>${q}</span>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+      <div class="nsp-badge">${nspQs.length} NSP</div>
+    </div>
+  `).join('');
+
+  return `
+    <div class="nsp-block" style="border-color:${alertBorder}">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+        <div style="font-size:14px;font-weight:600;color:${alertColor}">
+          ⚠️ Zones de non-visibilité — Réponses "NSP"
+        </div>
+        <div style="background:${alertBg};border:1px solid ${alertBorder};border-radius:20px;padding:3px 14px;font-size:12px;font-weight:700;color:${alertColor}">
+          ${totalNsp} NSP / ${totalQ} questions (${pct}%)
+        </div>
+      </div>
+      <p style="font-size:11px;color:#666;margin-bottom:12px;line-height:1.6">
+        Un NSP (Ne Sait Pas) signale une zone de <strong>non-visibilité managériale</strong> : le répondant n'a pas accès à l'information nécessaire pour évaluer ce critère. 
+        C'est un indicateur d'opacité interne à traiter au même titre qu'un score faible.
+      </p>
+      ${domainsHtml}
+    </div>
+  `;
+}
+
+function showResults() {
+  const scores = DOMAINS.map(d => getScore(d.id));
+  const global = Math.round(scores.reduce((a,b)=>a+b,0)/scores.length);
+  const lvl = getLevel(global);
+  const client = clientName || 'Entreprise cliente';
+  const name   = respondentName ? respondentName : '';
+  const role   = respondentRole ? respondentRole : '';
+
+  document.getElementById('domainNav').innerHTML = '';
+  document.getElementById('prog').style.width = '100%';
+  document.getElementById('progLabel').textContent = 'Diagnostic complet';
+
+  document.getElementById('mainContent').innerHTML = `
+    <div class="results">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:8px">
+        <div>
+          <div style="font-size:18px;font-weight:600">${client}</div>
+          ${name ? `<div style="font-size:13px;color:#555;margin-top:2px">${name}${role ? ' — ' + role : ''}</div>` : ''}
+          <div style="font-size:12px;color:#888;margin-top:2px">Diagnostic OPERION — ${diagDate}</div>
+        </div>
+        <div class="no-print" style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="print-btn" onclick="window.print()">Imprimer / PDF</button>
+          <button class="btn" onclick="goTo(0)">← Modifier</button>
+        </div>
+      </div>
+
+      <div class="global-score">
+        <div style="font-size:13px;color:#888;margin-bottom:4px">Score global de maturité</div>
+        <div class="global-num">${global}%</div>
+        <div style="font-size:13px;color:#555;margin-top:4px">${client}</div>
+        ${name ? `<div style="font-size:12px;color:#888;margin-top:2px">${name}${role ? ' — ' + role : ''}</div>` : ''}
+        <div><span class="level-badge" style="background:${lvl.bg};color:${lvl.color}">${lvl.label}</span></div>
+      </div>
+
+      <div class="radar-wrap">
+        <canvas id="radarChart" role="img" aria-label="Radar de maturité OPERION sur 8 domaines">
+          ${DOMAINS.map((d,i) => d.short+': '+scores[i]+'%').join(', ')}
+        </canvas>
+      </div>
+
+      <div class="scores-grid">
+        ${DOMAINS.map((d,i) => {
+          const lv = getLevel(scores[i]);
+          return `<div class="score-card" style="border-left-color:${d.color}">
+            <div class="score-card-label">${d.name}</div>
+            <div style="display:flex;align-items:baseline;gap:6px">
+              <span class="score-card-val">${scores[i]}%</span>
+              <span class="score-card-level" style="color:${lv.color}">${lv.label.split('—')[1].trim()}</span>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+
+      ${buildNspBlock(scores)}
+
+      <div style="background:#fff;border:1px solid #e0e0e0;border-radius:10px;padding:1.25rem;margin-bottom:1.5rem">
+        <div style="font-size:14px;font-weight:600;margin-bottom:0.75rem;color:#C9A84C">Domaines prioritaires à traiter</div>
+        ${[...DOMAINS].map((d,i)=>({...d,score:scores[i]})).sort((a,b)=>a.score-b.score).slice(0,3).map((d,rank)=>{
+          const lv = getLevel(d.score);
+          return `<div style="display:flex;align-items:center;gap:12px;padding:0.6rem 0;border-bottom:1px solid #f0f0f0">
+            <div style="width:24px;height:24px;border-radius:50%;background:${d.color};color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">${rank+1}</div>
+            <div style="flex:1">
+              <div style="font-size:13px;font-weight:600">${d.name}</div>
+              <div style="font-size:11px;color:#888">${lv.label}</div>
+            </div>
+            <div style="font-size:20px;font-weight:700;color:${d.color}">${d.score}%</div>
+          </div>`;
+        }).join('')}
+      </div>
+
+      <div class="no-print" style="background:#fff;border:1px solid #e0e0e0;border-radius:10px;padding:1.25rem;margin-bottom:1.5rem">
+        <div style="font-size:14px;font-weight:600;margin-bottom:8px;color:#C9A84C">📧 Envoyer le diagnostic à OPERION</div>
+        <p style="font-size:12px;color:#666;margin-bottom:12px">Cliquez ci-dessous pour envoyer ce diagnostic complet (scores, NSP et toutes les réponses) directement à <strong>operion.akr@gmail.com</strong>. Aucune action supplémentaire requise.</p>
+        <button id="sendBtn" class="btn btn-primary" onclick="sendEmail(${JSON.stringify(scores)}, ${global}, ${JSON.stringify(lvl)})">📤 Envoyer le diagnostic à OPERION</button>
+        <div id="mailStatus" class="mail-status"></div>
+      </div>
+
+      <div style="font-size:10px;color:#aaa;text-align:center;margin-top:1rem">
+        Diagnostic réalisé par OPERION — Alex Klein-Rhein | Conseil en excellence opérationnelle
+      </div>
+    </div>
+  `;
+
+  setTimeout(() => {
+    const ctx = document.getElementById('radarChart').getContext('2d');
+    new Chart(ctx, {
+      type: 'radar',
+      data: {
+        labels: DOMAINS.map(d => d.short),
+        datasets: [{
+          label: 'Score (%)',
+          data: scores,
+          backgroundColor: 'rgba(24,95,165,0.12)',
+          borderColor: '#C9A84C',
+          borderWidth: 2,
+          pointBackgroundColor: DOMAINS.map(d => d.color),
+          pointBorderColor: '#fff',
+          pointBorderWidth: 2,
+          pointRadius: 6
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          r: {
+            min: 0, max: 100,
+            ticks: { stepSize: 20, font: { size: 10 }, color: '#888', backdropColor: 'transparent' },
+            pointLabels: { font: { size: 11, weight: '500' }, color: '#444' },
+            grid: { color: 'rgba(0,0,0,0.07)' },
+            angleLines: { color: 'rgba(0,0,0,0.07)' }
+          }
+        },
+        plugins: { legend: { display: false } }
+      }
+    });
+  }, 100);
+}
+
+goTo(0);
+</script>
+</body>
+</html>
