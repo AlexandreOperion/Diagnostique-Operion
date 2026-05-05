@@ -803,6 +803,10 @@ function showResults() {
   const scores = DOMAINS.map(d => getScore(d.id));
   const global = Math.round(scores.reduce((a,b)=>a+b,0)/scores.length);
   const lvl = getLevel(global);
+  // Stockage global pour le bouton d'envoi
+  window._lastScores = scores;
+  window._lastGlobal = global;
+  window._lastLvl = lvl;
   const client = clientName || 'Entreprise cliente';
   const name   = respondentName ? respondentName : '';
   const role   = respondentRole ? respondentRole : '';
@@ -872,7 +876,7 @@ function showResults() {
       <div class="no-print" style="background:#fff;border:1px solid #e0e0e0;border-radius:10px;padding:1.25rem;margin-bottom:1.5rem">
         <div style="font-size:14px;font-weight:600;margin-bottom:8px;color:#C9A84C">📧 Envoyer le diagnostic à OPERION</div>
         <p style="font-size:12px;color:#666;margin-bottom:12px">Cliquez ci-dessous pour envoyer ce diagnostic complet (scores, NSP et toutes les réponses) directement à <strong>operion.akr@gmail.com</strong>. Aucune action supplémentaire requise.</p>
-        <button id="sendBtn" class="btn btn-primary" onclick="sendEmail(${JSON.stringify(scores)}, ${global}, ${JSON.stringify(lvl)})">📤 Envoyer le diagnostic à OPERION</button>
+        <button id="sendBtn" class="btn btn-primary" onclick="sendEmail(_lastScores, _lastGlobal, _lastLvl)">📤 Envoyer le diagnostic à OPERION</button>
         <div id="mailStatus" class="mail-status"></div>
       </div>
 
